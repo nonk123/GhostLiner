@@ -12,7 +12,7 @@ EpicCamera::operator Camera2D() {
         .offset = offset,
         .target = center,
         .rotation = 0.0,
-        .zoom = zoom,
+        .zoom = zoom * 64.0f,
     };
 }
 

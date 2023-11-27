@@ -15,7 +15,10 @@ namespace Things {
 struct RectDraw {};
 
 struct BodyExt : public Body {
-    std::variant<RectDraw, Texture> draw;
+    std::variant<RectDraw, Texture> draw = RectDraw();
+
+    BodyExt() = default;
+    ~BodyExt() = default;
 };
 
 struct Thing {
@@ -23,10 +26,10 @@ struct Thing {
 };
 
 namespace Things {
-    using List = std::vector<Thing>;
+    using List = std::vector<std::unique_ptr<Thing>>;
     extern List all;
 
-    void spawn(Thing);
+    void spawn(Thing*);
     void erase(std::size_t);
     void clear();
 
