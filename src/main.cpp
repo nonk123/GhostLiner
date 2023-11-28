@@ -1,11 +1,18 @@
-#include "box2d-lite/World.h"
+#include "muli/muli.h"
 #include "raylib.h"
 
-#include "camera.hpp"
 #include "gsm.hpp"
 #include "misc.hpp"
+#include "thing.hpp"
 
 int main(int, char**) {
+    muli::World world(muli::WorldSettings{
+        .gravity = {0.0, 9.8}, // Y goes down everywhere
+        .sleeping = false,
+    });
+
+    Things::phys_world = &world;
+
     InitWindow(800, 600, "GhostLiner");
     InitAudioDevice();
 
@@ -15,9 +22,6 @@ int main(int, char**) {
 
     while (!WindowShouldClose() && !stop) {
         BeginDrawing();
-        BeginMode2D(camera);
-
-        ClearBackground(RAYWHITE);
 
         try {
             gsm.tick();
@@ -25,12 +29,13 @@ int main(int, char**) {
             stop = true;
         }
 
-        EndMode2D();
         EndDrawing();
     }
 
     CloseAudioDevice();
     CloseWindow();
+
+    Things::phys_world = nullptr;
 
     return 0;
 }

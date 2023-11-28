@@ -3,56 +3,46 @@
 #include <variant>
 #include <vector>
 
-#include "misc.hpp"
+#include "muli/settings.h"
 #include "raylib.h"
+
+#include "misc.hpp"
 #include "thing.hpp"
 
-// Gravity goes up since we flip the Y axis.
-World Things::phys_world({0.0, 9.8}, 10);
+muli::World* Things::phys_world = nullptr;
 
 Things::List Things::all;
-
-void Things::spawn(Thing* thing) {
-    all.push_back(std::unique_ptr<Thing>(thing));
-
-    auto& last = all.back();
-    phys_world.Add(dynamic_cast<Body*>(&last->body));
-}
 
 void Things::erase(std::size_t idx) {
     {
         const auto& old = all.at(idx);
-
-        // TODO: test if this actually works.
-        std::erase(phys_world.bodies, &old->body);
+        phys_world->Destroy(old.underlying_body);
     }
 
     all.erase(all.begin() + idx);
 }
 
 void Things::clear() {
-    while (!all.empty()) {
-        erase(all.size() - 1);
-    }
+    all.clear();
 }
 
 void Things::update() {
-    phys_world.Step(TIMESTEP);
+    phys_world->Step(TIMESTEP);
 }
 
 void Things::draw() {
     for (const auto& thing : all) {
-        const auto& body = thing->body;
-        const auto& draw = body.draw;
+        const auto body_pos = thing->GetPosition();
+        const Vector2 pos{body_pos.x, body_pos.y};
 
-        const Vector2 pos{-body.position.x, -body.position.y};
-        const float rot = body.rotation;
+        const float rot = thing->GetRotation().GetAngle() * RAD2DEG;
+
+        const auto& draw = thing.draw;
 
         if (std::holds_alternative<RectDraw>(draw)) {
-            // TODO: FIX FIX FIX.
-            const float w = body.width.x;
-            const float h = body.width.y;
-            DrawRectanglePro({-w, -h, w, h}, pos, rot, BLACK);
+            const float w = thing.width;
+            const float h = thing.height;
+            DrawRectanglePro({pos.x, pos.y, w, h}, {w * 0.5f, h * 0.5f}, rot, BLACK);
         } else {
             const auto texture = std::get<Texture>(draw);
             DrawTextureEx(texture, pos, rot, 1.0, WHITE);

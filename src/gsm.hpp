@@ -67,6 +67,7 @@ class Restart : public GameState {
 
     void init() override;
     void update() override;
+    void overlay() override;
 };
 
 class Play : public GameState {

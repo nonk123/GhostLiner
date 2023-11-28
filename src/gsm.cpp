@@ -1,9 +1,13 @@
-#include "gsm.hpp"
+#include <cmath>
+#include <memory>
+
 #include "camera.hpp"
+#include "gsm.hpp"
+#include "raymath.h"
 #include "thing.hpp"
 
+#include "muli/muli.h"
 #include "raylib.h"
-#include <cmath>
 
 GSM::GSM() {
     stack.push_back(std::unique_ptr<GameState>(new Restart));
@@ -32,7 +36,13 @@ void GSM::tick() {
         state.reset(replace);
     } else {
         Things::update();
-        Things::draw();
+
+        BeginMode2D(camera);
+        {
+            ClearBackground(RAYWHITE);
+            Things::draw();
+        }
+        EndMode2D();
 
         state->overlay();
 
@@ -48,18 +58,34 @@ void Restart::init() {
 }
 
 void Restart::update() {
-    if (GetTime() - init_time >= 3.0) {
+    const auto secs = GetTime() - init_time;
+
+    if (secs >= 3.0) {
         transition.replace(new Play);
     }
 }
 
+void Restart::overlay() {
+    const auto secs = GetTime() - init_time;
+    std::string text;
+
+    if (secs <= 1.0) {
+        text = "Get ready";
+    } else if (secs <= 2.0) {
+        text = "Set";
+    } else if (secs <= 3.0) {
+        text = "GOGOGO!!!";
+    }
+
+    const int font_size = 30;
+    const auto text_w = MeasureText(text.c_str(), font_size);
+    const auto middle = GetScreenWidth() / 2 - text_w / 2;
+    DrawText(text.c_str(), middle, 10, font_size, BLACK);
+}
+
 void Play::init() {
-    const auto player = new Thing;
-
-    auto& body = player->body;
-    body.Set({1.0, 1.0}, 20.0);
-
-    Things::spawn(player);
+    auto sled = Things::spawn_dynamic(1.4, 0.4);
+    sled->SetFriction(0.2);
 
     last_world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
 }
@@ -69,23 +95,19 @@ void Play::update() {
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         const Vector2 delta{world_pos.x - last_world_pos.x, world_pos.y - last_world_pos.y};
-        const float eps = 0.001;
+        const float eps = 0.1;
 
-        if (std::abs(delta.x) <= eps || std::abs(delta.y) <= eps) {
+        if (Vector2Length(delta) <= eps) {
             return;
         }
 
-        auto line = new Thing;
-        auto& body = line->body;
+        const auto length = std::hypot(delta.x, delta.y);
+        const Vector2 size(length, 0.5);
 
-        const Vec2 size(std::hypot(delta.x, delta.y), 0.5);
-
-        body.Set(size, FLT_MAX);
-        body.friction = 0.0;
-        body.position = Vec2(world_pos.x, world_pos.y);
-        body.rotation = std::atan2(delta.y, delta.x);
-
-        Things::spawn(line);
+        auto line = Things::spawn_static(length, 0.5);
+        line->SetFriction(0.1);
+        line->SetPosition({world_pos.x, world_pos.y});
+        line->SetRotation(std::atan2(delta.y, delta.x));
     }
 
     last_world_pos = world_pos;
