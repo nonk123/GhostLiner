@@ -4,79 +4,42 @@
 #include <set>
 #include <variant>
 
+#include "SECS.hpp"
 #include "muli/muli.h"
-#include "muli/rigidbody.h"
 #include "raylib.h"
 
-namespace Things {
-    extern muli::World* phys_world;
-}
+extern muli::World* phys_world;
 
-struct RectDraw {};
+struct Player : public Component {};
+struct Line : public Component {};
 
-enum Tag {
-    DELETE_ME,
-    PLAYER,
-    LINE,
-};
-
-struct Thing {
-    using Draw = std::variant<RectDraw, Texture>;
-    Draw draw;
-
+struct Body : public Component {
+    muli::RigidBody* rigid = nullptr;
     float width, height;
-    muli::RigidBody* body = nullptr;
+    double creation_time;
 
-    std::set<Tag> tags;
+    Body(
+        Vector2 pos, float rotation, Vector2 size, float friction,
+        bool _static = false
+    ) {
+        creation_time = GetTime();
 
-    double creation_time = 0;
+        width = size.x;
+        height = size.y;
 
-    Thing(float width, float height, Draw draw)
-        : draw(draw), width(width), height(height) {}
+        const auto type = _static ? muli::RigidBody::Type::static_body
+                                  : muli::RigidBody::Type::dynamic_body;
 
-    Thing(float width, float height) : Thing(width, height, RectDraw()) {}
+        rigid = phys_world->CreateBox(width, height, type);
 
-    ~Thing() {
-        if (Things::phys_world != nullptr) {
-            Things::phys_world->Destroy(body);
+        rigid->SetFriction(friction);
+        rigid->SetPosition({pos.x, pos.y});
+        rigid->SetRotation(rotation);
+    }
+
+    ~Body() {
+        if (phys_world != nullptr) {
+            phys_world->Destroy(rigid);
         }
     }
 };
-
-namespace Things {
-    using List = std::vector<std::shared_ptr<Thing>>;
-    extern List all;
-
-    template <typename... Args>
-    std::weak_ptr<Thing> spawn_ex(bool dynamic, Args&&... args) {
-        const auto thing = std::make_shared<Thing>(args...);
-        thing->creation_time = GetTime();
-
-        const auto type = dynamic ? muli::RigidBody::Type::dynamic_body
-                                  : muli::RigidBody::Type::static_body;
-
-        const auto body =
-            phys_world->CreateBox(thing->width, thing->height, type);
-        thing->body = body;
-
-        const std::weak_ptr<Thing> weak = thing;
-        all.push_back(std::move(thing));
-        return weak;
-    }
-
-    template <typename... Args>
-    std::weak_ptr<Thing> spawn_dynamic(Args&&... args) {
-        return spawn_ex(true, args...);
-    }
-
-    template <typename... Args>
-    std::weak_ptr<Thing> spawn_static(Args&&... args) {
-        return spawn_ex(false, args...);
-    }
-
-    void erase(std::size_t);
-    void clear();
-
-    void update();
-    void draw();
-} // namespace Things

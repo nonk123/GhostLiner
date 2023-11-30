@@ -5,6 +5,8 @@
 
 #include "raylib.h"
 
+#include "thing.hpp"
+
 struct Exit {};
 
 extern enum GameState {
@@ -12,13 +14,13 @@ extern enum GameState {
     PLAY,
 } game_state;
 
-void tick_things();
+void draw_things(Query<With<Body>>);
 
-void reset();
+void reset(Commands, Query<All>);
 void ready_set_go();
 
-void start();
+void start(Commands);
+void follow_player(Query<With<Player, Body>>);
 
-void follow_player();
-void draw_lines();
-void cull_lines();
+void draw_lines(Commands);
+void cull_lines(Commands, Query<With<Line, Body>>);

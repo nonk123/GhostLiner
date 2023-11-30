@@ -12,14 +12,25 @@
 
 GameState game_state = GameState::RESTART;
 
-void tick_things() {
+void draw_things(Query<With<Body>> things) {
     BeginMode2D(camera);
 
-    Things::update();
+    ClearBackground(RAYWHITE);
 
-    {
-        ClearBackground(RAYWHITE);
-        Things::draw();
+    for (const auto& thing : things) {
+        const auto& body = thing->expect<Body>();
+
+        const auto body_pos = body->rigid->GetPosition();
+        const Vector2 pos{body_pos.x, body_pos.y};
+
+        const float rot = body->rigid->GetRotation().GetAngle() * RAD2DEG;
+
+        const float w = body->width;
+        const float h = body->height;
+
+        DrawRectanglePro(
+            {pos.x, pos.y, w, h}, {w * 0.5f, h * 0.5f}, rot, BLACK
+        );
     }
 
     EndMode2D();
@@ -27,8 +38,11 @@ void tick_things() {
 
 static double init_time;
 
-void reset() {
-    Things::clear();
+void reset(Commands cmd, Query<All> query) {
+    for (const auto& entity : query) {
+        cmd.push(new Delete(entity));
+    }
+
     init_time = GetTime();
 }
 
@@ -55,37 +69,30 @@ void ready_set_go() {
 
 static Vector2 last_world_pos;
 
-void start() {
-    auto sled = Things::spawn_dynamic(1.4, 0.4).lock();
-    sled->tags.insert(Tag::PLAYER);
-    sled->body->SetFriction(0.2);
-
+void start(Commands cmd) {
+    cmd.push(new Spawn(new Player, new Body({0.0, 0.0}, 0.0, {1.4, 0.4}, 0.2)));
     last_world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
 }
 
-void follow_player() {
-    for (const auto& thing : Things::all) {
-        if (thing->tags.contains(Tag::PLAYER)) {
-            const auto pos = thing->body->GetPosition();
-            camera.center = {pos.x, pos.y};
-            return;
+void follow_player(Query<With<Player, Body>> players) {
+    for (const auto& thing : players) {
+        const auto pos = thing->expect<Body>()->rigid->GetPosition();
+        camera.center = {pos.x, pos.y};
+    }
+}
+
+void cull_lines(Commands cmd, Query<With<Line, Body>> lines) {
+    for (const auto& line : lines) {
+        const auto creation_time = line->expect<Body>()->creation_time;
+        const auto lifetime = GetTime() - creation_time;
+
+        if (lifetime > 5.0) {
+            cmd.push(new Delete(line));
         }
     }
 }
 
-void cull_lines() {
-    for (const auto& thing : Things::all) {
-        if (thing->tags.contains(Tag::LINE)) {
-            const auto lifetime = GetTime() - thing->creation_time;
-
-            if (lifetime > 5.0) {
-                thing->tags.insert(Tag::DELETE_ME);
-            }
-        }
-    }
-}
-
-void draw_lines() {
+void draw_lines(Commands cmd) {
     const auto world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
@@ -99,11 +106,11 @@ void draw_lines() {
         const Vector2 mid =
             Vector2Scale(Vector2Add(world_pos, last_world_pos), 0.5);
 
-        auto line = Things::spawn_static(length, 0.5).lock();
-        line->tags.insert(Tag::LINE);
-        line->body->SetFriction(0.1);
-        line->body->SetPosition({mid.x, mid.y});
-        line->body->SetRotation(std::atan2(delta.y, delta.x));
+        const float rot = std::atan2(delta.y, delta.x);
+
+        cmd.push(
+            new Spawn(new Line, new Body(mid, rot, {length, 0.5}, 0.1, true))
+        );
     }
 
     last_world_pos = world_pos;
