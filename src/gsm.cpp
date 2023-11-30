@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <memory>
 
@@ -84,30 +85,46 @@ void Restart::overlay() {
 }
 
 void Play::init() {
-    auto sled = Things::spawn_dynamic(1.4, 0.4);
-    sled->SetFriction(0.2);
+    auto sled = Things::spawn_dynamic(1.4, 0.4).lock();
+    sled->tags.insert(Tag::PLAYER);
+    sled->body->SetFriction(0.2);
 
     last_world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
 }
 
 void Play::update() {
+    for (const auto& thing : Things::all) {
+        if (thing->tags.contains(Tag::PLAYER)) {
+            const auto pos = thing->body->GetPosition();
+            camera.center = {pos.x, pos.y};
+        }
+
+        if (thing->tags.contains(Tag::LINE)) {
+            const auto lifetime = GetTime() - thing->creation_time;
+
+            if (lifetime > 5.0) {
+                thing->tags.insert(Tag::DELETE_ME);
+            }
+        }
+    }
+
     const auto world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        const Vector2 delta{world_pos.x - last_world_pos.x, world_pos.y - last_world_pos.y};
-        const float eps = 0.1;
+        const auto delta = Vector2Subtract(world_pos, last_world_pos);
+        const auto length = Vector2Length(delta);
 
-        if (Vector2Length(delta) <= eps) {
+        if (length <= 0.2) {
             return;
         }
 
-        const auto length = std::hypot(delta.x, delta.y);
-        const Vector2 size(length, 0.5);
+        const Vector2 mid = Vector2Scale(Vector2Add(world_pos, last_world_pos), 0.5);
 
-        auto line = Things::spawn_static(length, 0.5);
-        line->SetFriction(0.1);
-        line->SetPosition({world_pos.x, world_pos.y});
-        line->SetRotation(std::atan2(delta.y, delta.x));
+        auto line = Things::spawn_static(length, 0.5).lock();
+        line->tags.insert(Tag::LINE);
+        line->body->SetFriction(0.1);
+        line->body->SetPosition({mid.x, mid.y});
+        line->body->SetRotation(std::atan2(delta.y, delta.x));
     }
 
     last_world_pos = world_pos;
