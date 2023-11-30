@@ -10,63 +10,29 @@
 #include "muli/muli.h"
 #include "raylib.h"
 
-GSM::GSM() {
-    stack.push_back(std::unique_ptr<GameState>(new Restart));
-}
+GameState game_state = GameState::RESTART;
 
-void GSM::tick() {
-    if (stack.empty()) {
-        throw Exit();
+void tick_things() {
+    BeginMode2D(camera);
+
+    Things::update();
+
+    {
+        ClearBackground(RAYWHITE);
+        Things::draw();
     }
 
-    auto& state = stack.back();
-    state->update();
-
-    const auto push = state->transition._push;
-    const auto replace = state->transition._replacement;
-
-    if (state->transition._pop) {
-        stack.pop_back();
-
-        if (stack.empty()) {
-            throw Exit();
-        }
-    } else if (push != nullptr) {
-        stack.push_back(std::unique_ptr<GameState>());
-    } else if (replace != nullptr) {
-        state.reset(replace);
-    } else {
-        Things::update();
-
-        BeginMode2D(camera);
-        {
-            ClearBackground(RAYWHITE);
-            Things::draw();
-        }
-        EndMode2D();
-
-        state->overlay();
-
-        return;
-    }
-
-    stack.back()->init();
+    EndMode2D();
 }
 
-void Restart::init() {
+static double init_time;
+
+void reset() {
     Things::clear();
     init_time = GetTime();
 }
 
-void Restart::update() {
-    const auto secs = GetTime() - init_time;
-
-    if (secs >= 3.0) {
-        transition.replace(new Play);
-    }
-}
-
-void Restart::overlay() {
+void ready_set_go() {
     const auto secs = GetTime() - init_time;
     std::string text;
 
@@ -76,6 +42,9 @@ void Restart::overlay() {
         text = "Set";
     } else if (secs <= 3.0) {
         text = "GOGOGO!!!";
+    } else {
+        game_state = GameState::PLAY;
+        return;
     }
 
     const int font_size = 30;
@@ -84,7 +53,9 @@ void Restart::overlay() {
     DrawText(text.c_str(), middle, 10, font_size, BLACK);
 }
 
-void Play::init() {
+static Vector2 last_world_pos;
+
+void start() {
     auto sled = Things::spawn_dynamic(1.4, 0.4).lock();
     sled->tags.insert(Tag::PLAYER);
     sled->body->SetFriction(0.2);
@@ -92,13 +63,18 @@ void Play::init() {
     last_world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
 }
 
-void Play::update() {
+void follow_player() {
     for (const auto& thing : Things::all) {
         if (thing->tags.contains(Tag::PLAYER)) {
             const auto pos = thing->body->GetPosition();
             camera.center = {pos.x, pos.y};
+            return;
         }
+    }
+}
 
+void cull_lines() {
+    for (const auto& thing : Things::all) {
         if (thing->tags.contains(Tag::LINE)) {
             const auto lifetime = GetTime() - thing->creation_time;
 
@@ -107,7 +83,9 @@ void Play::update() {
             }
         }
     }
+}
 
+void draw_lines() {
     const auto world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
@@ -118,7 +96,8 @@ void Play::update() {
             return;
         }
 
-        const Vector2 mid = Vector2Scale(Vector2Add(world_pos, last_world_pos), 0.5);
+        const Vector2 mid =
+            Vector2Scale(Vector2Add(world_pos, last_world_pos), 0.5);
 
         auto line = Things::spawn_static(length, 0.5).lock();
         line->tags.insert(Tag::LINE);
@@ -129,5 +108,3 @@ void Play::update() {
 
     last_world_pos = world_pos;
 }
-
-GSM gsm;

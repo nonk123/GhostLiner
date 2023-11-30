@@ -23,7 +23,9 @@ void Things::clear() {
 void Things::update() {
     phys_world->Step(TIMESTEP);
 
-    std::erase_if(all, [](const auto& t) { return t->tags.contains(Tag::DELETE_ME); });
+    std::erase_if(all, [](const auto& t) {
+        return t->tags.contains(Tag::DELETE_ME);
+    });
 }
 
 void Things::draw() {
@@ -38,7 +40,9 @@ void Things::draw() {
         if (std::holds_alternative<RectDraw>(draw)) {
             const float w = thing->width;
             const float h = thing->height;
-            DrawRectanglePro({pos.x, pos.y, w, h}, {w * 0.5f, h * 0.5f}, rot, BLACK);
+            DrawRectanglePro(
+                {pos.x, pos.y, w, h}, {w * 0.5f, h * 0.5f}, rot, BLACK
+            );
         } else {
             const auto texture = std::get<Texture>(draw);
             DrawTextureEx(texture, pos, rot, 1.0, WHITE);

@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(GhostLiner)
 set(PROJECT_TARGET ${PROJECT_NAME})
 
+set(MULI_BUILD_DEMO OFF)
+set(SECS_BUILD_TEST OFF)
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -15,9 +18,12 @@ FetchContent_Declare(
   GIT_REPOSITORY "https://github.com/Sopiro/Muli.git"
   GIT_TAG master)
 
-set(MULI_BUILD_DEMO OFF)
+FetchContent_Declare(
+  secs
+  GIT_REPOSITORY "https://github.com/Schwungus-Software/SECS.git"
+  GIT_TAG barely-usable)
 
-FetchContent_MakeAvailable(raylib muli)
+FetchContent_MakeAvailable(raylib muli SECS)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -42,4 +48,4 @@ set(TEMPLATES)
 set(HEADERS "src/gsm.hpp" "src/thing.hpp" "src/camera.hpp")
 
 add_executable(${PROJECT_TARGET} ${SOURCES} ${TEMPLATES} ${HEADERS})
-target_link_libraries(${PROJECT_TARGET} raylib muli)
+target_link_libraries(${PROJECT_TARGET} PRIVATE raylib muli SECS)

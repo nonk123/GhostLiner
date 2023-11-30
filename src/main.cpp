@@ -1,9 +1,22 @@
+#include "SECS.hpp"
 #include "muli/muli.h"
 #include "raylib.h"
 
+#include "camera.hpp"
 #include "gsm.hpp"
 #include "misc.hpp"
 #include "thing.hpp"
+
+const Systems SECS::systems{
+    {GameState::RESTART, Stage::STARTUP, reset},
+    {GameState::PLAY, Stage::STARTUP, start},
+    {GameState::RESTART, Stage::UPDATE, tick_things},
+    {GameState::PLAY, Stage::UPDATE, tick_things},
+    {GameState::PLAY, Stage::UPDATE, follow_player},
+    {GameState::PLAY, Stage::UPDATE, cull_lines},
+    {GameState::PLAY, Stage::UPDATE, draw_lines},
+    {GameState::RESTART, Stage::UPDATE, ready_set_go},
+};
 
 int main(int, char**) {
     muli::World world(muli::WorldSettings{
@@ -24,7 +37,7 @@ int main(int, char**) {
         BeginDrawing();
 
         try {
-            gsm.tick();
+            SECS::tick(game_state);
         } catch (Exit) {
             stop = true;
         }

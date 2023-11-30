@@ -31,11 +31,15 @@ struct Thing {
 
     double creation_time = 0;
 
-    Thing(float width, float height, Draw draw) : draw(draw), width(width), height(height) {}
+    Thing(float width, float height, Draw draw)
+        : draw(draw), width(width), height(height) {}
+
     Thing(float width, float height) : Thing(width, height, RectDraw()) {}
 
     ~Thing() {
-        Things::phys_world->Destroy(body);
+        if (Things::phys_world != nullptr) {
+            Things::phys_world->Destroy(body);
+        }
     }
 };
 
@@ -48,9 +52,11 @@ namespace Things {
         const auto thing = std::make_shared<Thing>(args...);
         thing->creation_time = GetTime();
 
-        const auto type = dynamic ? muli::RigidBody::Type::dynamic_body : muli::RigidBody::Type::static_body;
+        const auto type = dynamic ? muli::RigidBody::Type::dynamic_body
+                                  : muli::RigidBody::Type::static_body;
 
-        const auto body = phys_world->CreateBox(thing->width, thing->height, type);
+        const auto body =
+            phys_world->CreateBox(thing->width, thing->height, type);
         thing->body = body;
 
         const std::weak_ptr<Thing> weak = thing;
