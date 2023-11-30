@@ -10,10 +10,11 @@
 const Systems SECS::systems{
     {GameState::RESTART, Stage::STARTUP, reset},
     {GameState::PLAY, Stage::STARTUP, start},
-    {GameState::RESTART, Stage::UPDATE, draw_things},
-    {GameState::PLAY, Stage::UPDATE, draw_things},
     {GameState::PLAY, Stage::UPDATE, follow_player},
+    {GameState::PLAY, Stage::UPDATE, draw_things},
+    {GameState::RESTART, Stage::UPDATE, draw_things},
     {GameState::PLAY, Stage::UPDATE, cull_lines},
+    {GameState::PLAY, Stage::UPDATE, explode},
     {GameState::PLAY, Stage::UPDATE, draw_lines},
     {GameState::RESTART, Stage::UPDATE, ready_set_go},
 };

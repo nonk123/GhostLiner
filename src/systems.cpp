@@ -70,7 +70,27 @@ void ready_set_go() {
 static Vector2 last_world_pos;
 
 void start(Commands cmd) {
-    cmd.push(new Spawn(new Player, new Body({0.0, 0.0}, 0.0, {1.4, 0.4}, 0.2)));
+    const auto base = new Body({0.0, 0.0}, 0.0, {1.4, 0.4}, 0.2);
+    const auto back = new Body({-0.75, -0.5}, 0.0, {0.3, 1.0}, 0.2);
+    const auto front = new Body({0.75, -0.5}, 0.0, {0.3, 1.0}, 0.2);
+
+    cmd.push(new Spawn(base));
+    cmd.push(new Spawn(back));
+    cmd.push(new Spawn(front));
+
+    cmd.push(new Spawn(new WeldJoint(base, back, {-0.65, -0.2})));
+    cmd.push(new Spawn(new WeldJoint(base, front, {0.65, -0.2})));
+
+    const auto head = new Body({0.0, -0.7}, 0.0, {0.2, 0.2}, 0.8);
+    head->rigid->SetContinuous(true);
+
+    const auto body = new Body({0.0, -0.4}, 0.0, {0.3, 0.4}, 0.8);
+    body->rigid->SetContinuous(true);
+
+    cmd.push(new Spawn(head, new Explosive, new Player));
+    cmd.push(new Spawn(body, new Explosive));
+    cmd.push(new Spawn(new RevJoint(body, head, {0.0, -0.6})));
+
     last_world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
 }
 
@@ -114,4 +134,34 @@ void draw_lines(Commands cmd) {
     }
 
     last_world_pos = world_pos;
+}
+
+void explode(
+    Commands cmd, Query<With<Explosive, Body>> explosives,
+    Query<With<Line, Body>> lines
+) {
+    // CUBIC TIME COMPLEXITY!!! YEEEEAH!!!
+
+    const auto count = phys_world->GetContactCount();
+
+    for (const auto& explosive : explosives) {
+        const auto exp_body = explosive->expect<Body>()->rigid;
+
+        for (const auto& line : lines) {
+            const auto line_body = line->expect<Body>()->rigid;
+
+            const auto contacts = phys_world->GetContacts();
+
+            for (std::size_t idx = 0; idx < count; idx++) {
+                const auto& contact = contacts[idx];
+
+                if ((contact.GetIncidentBody() == line_body &&
+                     contact.GetReferenceBody() == exp_body) ||
+                    (contact.GetIncidentBody() == exp_body &&
+                     contact.GetReferenceBody() == line_body)) {
+                    cmd.push(new Delete(explosive));
+                }
+            }
+        }
+    }
 }

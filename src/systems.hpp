@@ -24,3 +24,5 @@ void follow_player(Query<With<Player, Body>>);
 
 void draw_lines(Commands);
 void cull_lines(Commands, Query<With<Line, Body>>);
+
+void explode(Commands, Query<With<Explosive, Body>>, Query<With<Line, Body>>);
