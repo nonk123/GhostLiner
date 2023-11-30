@@ -20,7 +20,7 @@ int main(int, char**) {
 
     auto stop = false;
 
-    while (!WindowShouldClose() && !stop) {
+    while (!stop && !WindowShouldClose()) {
         BeginDrawing();
 
         try {

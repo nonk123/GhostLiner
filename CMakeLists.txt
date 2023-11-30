@@ -16,6 +16,7 @@ FetchContent_Declare(
   GIT_TAG master)
 
 set(MULI_BUILD_DEMO OFF)
+
 FetchContent_MakeAvailable(raylib muli)
 
 set(CMAKE_CXX_STANDARD 20)
