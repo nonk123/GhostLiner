@@ -40,7 +40,7 @@ static double init_time;
 
 void reset(Commands cmd, Query<All> query) {
     for (const auto& entity : query) {
-        cmd.push(new Delete(entity));
+        cmd.del(entity);
     }
 
     init_time = GetTime();
@@ -74,12 +74,12 @@ void start(Commands cmd) {
     const auto back = new Body({-0.75, -0.5}, 0.0, {0.3, 1.0}, 0.2);
     const auto front = new Body({0.75, -0.5}, 0.0, {0.3, 1.0}, 0.2);
 
-    cmd.push(new Spawn(base));
-    cmd.push(new Spawn(back));
-    cmd.push(new Spawn(front));
+    cmd.spawn(base);
+    cmd.spawn(back);
+    cmd.spawn(front);
 
-    cmd.push(new Spawn(new WeldJoint(base, back, {-0.65, -0.2})));
-    cmd.push(new Spawn(new WeldJoint(base, front, {0.65, -0.2})));
+    cmd.spawn(new WeldJoint(base, back, {-0.65, -0.2}));
+    cmd.spawn(new WeldJoint(base, front, {0.65, -0.2}));
 
     const auto head = new Body({0.0, -0.7}, 0.0, {0.2, 0.2}, 0.8);
     head->rigid->SetContinuous(true);
@@ -87,9 +87,9 @@ void start(Commands cmd) {
     const auto body = new Body({0.0, -0.4}, 0.0, {0.3, 0.4}, 0.8);
     body->rigid->SetContinuous(true);
 
-    cmd.push(new Spawn(head, new Explosive, new Player));
-    cmd.push(new Spawn(body, new Explosive));
-    cmd.push(new Spawn(new RevJoint(body, head, {0.0, -0.6})));
+    cmd.spawn(head, new Explosive, new Player);
+    cmd.spawn(body, new Explosive);
+    cmd.spawn(new RevJoint(body, head, {0.0, -0.6}));
 
     last_world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
 }
@@ -107,7 +107,7 @@ void cull_lines(Commands cmd, Query<With<Line, Body>> lines) {
         const auto lifetime = GetTime() - creation_time;
 
         if (lifetime > 5.0) {
-            cmd.push(new Delete(line));
+            cmd.del(line);
         }
     }
 }
@@ -128,9 +128,7 @@ void draw_lines(Commands cmd) {
 
         const float rot = std::atan2(delta.y, delta.x);
 
-        cmd.push(
-            new Spawn(new Line, new Body(mid, rot, {length, 0.5}, 0.1, true))
-        );
+        cmd.spawn(new Line, new Body(mid, rot, {length, 0.5}, 0.1, true));
     }
 
     last_world_pos = world_pos;
@@ -159,7 +157,7 @@ void explode(
                      contact.GetReferenceBody() == exp_body) ||
                     (contact.GetIncidentBody() == exp_body &&
                      contact.GetReferenceBody() == line_body)) {
-                    cmd.push(new Delete(explosive));
+                    cmd.del(explosive);
                 }
             }
         }
