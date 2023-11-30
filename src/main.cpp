@@ -3,8 +3,8 @@
 #include "raylib.h"
 
 #include "camera.hpp"
-#include "gsm.hpp"
 #include "misc.hpp"
+#include "systems.hpp"
 #include "thing.hpp"
 
 const Systems SECS::systems{
@@ -21,7 +21,7 @@ const Systems SECS::systems{
 int main(int, char**) {
     phys_world = new muli::World(muli::WorldSettings{
         .gravity = {0.0, 9.8}, // Y goes down everywhere
-        .sleeping = false,
+        .sleeping = false,     // things are too dynamic to sleep in this game
     });
 
     InitWindow(800, 600, "GhostLiner");

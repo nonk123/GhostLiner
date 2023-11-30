@@ -41,11 +41,11 @@ if(EMSCRIPTEN)
        DESTINATION "${CMAKE_BINARY_DIR}/index.html")
 endif()
 
-set(SOURCES "src/main.cpp" "src/gsm.cpp" "src/thing.cpp" "src/camera.cpp")
+set(SOURCES "src/main.cpp" "src/systems.cpp" "src/thing.cpp" "src/camera.cpp")
 
 set(TEMPLATES)
 
-set(HEADERS "src/gsm.hpp" "src/thing.hpp" "src/camera.hpp")
+set(HEADERS "src/systems.hpp" "src/thing.hpp" "src/camera.hpp")
 
 add_executable(${PROJECT_TARGET} ${SOURCES} ${TEMPLATES} ${HEADERS})
 target_link_libraries(${PROJECT_TARGET} PRIVATE raylib muli SECS)
