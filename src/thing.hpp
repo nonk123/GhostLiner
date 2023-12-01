@@ -14,6 +14,18 @@ struct Player : public Component {};
 struct Line : public Component {};
 struct Explosive : public Component {};
 
+template <typename Base, typename T>
+void destroy_if_valid(T* item, Base* source) {
+    while (source != nullptr) {
+        if (source == item) {
+            phys_world->Destroy(item);
+            return;
+        }
+
+        source = source->GetNext();
+    }
+}
+
 struct Body : public Component {
     muli::RigidBody* rigid = nullptr;
 
@@ -27,7 +39,7 @@ struct Body : public Component {
 
     ~Body() {
         if (phys_world != nullptr) {
-            phys_world->Destroy(rigid);
+            destroy_if_valid(rigid, phys_world->GetBodyList());
         }
     }
 };
@@ -41,7 +53,7 @@ struct RevJoint : public Component {
 
     ~RevJoint() {
         if (phys_world != nullptr) {
-            phys_world->Destroy(revolute);
+            destroy_if_valid(revolute, phys_world->GetJoints());
         }
     }
 };
@@ -55,7 +67,7 @@ struct WeldJoint : public Component {
 
     ~WeldJoint() {
         if (phys_world != nullptr) {
-            phys_world->Destroy(weld);
+            destroy_if_valid(weld, phys_world->GetJoints());
         }
     }
 };

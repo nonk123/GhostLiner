@@ -26,3 +26,5 @@ void draw_lines(Commands);
 void cull_lines(Commands, Query<With<Line, Body>>);
 
 void explode(Commands, Query<With<Explosive, Body>>, Query<With<Line, Body>>);
+
+void await_restart(Query<With<Player>>);

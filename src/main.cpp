@@ -17,6 +17,7 @@ const Systems SECS::systems{
     {GameState::PLAY, Stage::UPDATE, explode},
     {GameState::PLAY, Stage::UPDATE, draw_lines},
     {GameState::RESTART, Stage::UPDATE, ready_set_go},
+    {GameState::PLAY, Stage::UPDATE, await_restart},
 };
 
 int main(int, char**) {

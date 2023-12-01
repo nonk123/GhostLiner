@@ -12,6 +12,11 @@
 
 GameState game_state = GameState::RESTART;
 
+const double DEATH_RESTART_TIMER = 3.0;
+
+static Vector2 last_world_pos;
+static double reset_time, death_time;
+
 void draw_things(Query<With<Body>> things) {
     BeginMode2D(camera);
 
@@ -36,18 +41,17 @@ void draw_things(Query<With<Body>> things) {
     EndMode2D();
 }
 
-static double init_time;
-
 void reset(Commands cmd, Query<All> query) {
     for (const auto& entity : query) {
         cmd.del(entity);
     }
 
-    init_time = GetTime();
+    reset_time = GetTime();
+    death_time = 0.0;
 }
 
 void ready_set_go() {
-    const auto secs = GetTime() - init_time;
+    const auto secs = GetTime() - reset_time;
     std::string text;
 
     if (secs <= 1.0) {
@@ -67,12 +71,15 @@ void ready_set_go() {
     DrawText(text.c_str(), middle, 10, font_size, BLACK);
 }
 
-static Vector2 last_world_pos;
-
 void start(Commands cmd) {
     const auto base = new Body({0.0, 0.0}, 0.0, {1.4, 0.4}, 0.2);
+    base->rigid->SetContinuous(true);
+
     const auto back = new Body({-0.75, -0.5}, 0.0, {0.3, 1.0}, 0.2);
+    back->rigid->SetContinuous(true);
+
     const auto front = new Body({0.75, -0.5}, 0.0, {0.3, 1.0}, 0.2);
+    front->rigid->SetContinuous(true);
 
     cmd.spawn(base);
     cmd.spawn(back);
@@ -148,18 +155,36 @@ void explode(
         for (const auto& line : lines) {
             const auto line_body = line->expect<Body>()->rigid;
 
-            const auto contacts = phys_world->GetContacts();
+            auto contact = phys_world->GetContacts();
 
-            for (std::size_t idx = 0; idx < count; idx++) {
-                const auto& contact = contacts[idx];
-
-                if ((contact.GetIncidentBody() == line_body &&
-                     contact.GetReferenceBody() == exp_body) ||
-                    (contact.GetIncidentBody() == exp_body &&
-                     contact.GetReferenceBody() == line_body)) {
+            while (contact != nullptr) {
+                if ((contact->GetIncidentBody() == line_body &&
+                     contact->GetReferenceBody() == exp_body) ||
+                    (contact->GetIncidentBody() == exp_body &&
+                     contact->GetReferenceBody() == line_body)) {
                     cmd.del(explosive);
                 }
+
+                contact = contact->GetNext();
             }
         }
+    }
+}
+
+void await_restart(Query<With<Player>> players) {
+    if (death_time == 0.0) {
+        death_time = GetTime();
+    }
+
+    for (const auto& player : players) {
+        death_time = 0.0;
+    }
+
+    if (death_time == 0.0) {
+        return;
+    }
+
+    if (GetTime() - death_time >= DEATH_RESTART_TIMER) {
+        game_state = GameState::RESTART;
     }
 }
