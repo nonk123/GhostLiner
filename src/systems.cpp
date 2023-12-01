@@ -10,8 +10,6 @@
 #include "muli/muli.h"
 #include "raylib.h"
 
-GameState game_state = GameState::RESTART;
-
 const double DEATH_RESTART_TIMER = 3.0;
 
 static Vector2 last_world_pos;
@@ -188,3 +186,18 @@ void await_restart(Query<With<Player>> players) {
         game_state = GameState::RESTART;
     }
 }
+
+GameState game_state = GameState::RESTART;
+
+const Systems SECS::systems{
+    {GameState::RESTART, Stage::STARTUP, reset},
+    {GameState::PLAY, Stage::STARTUP, start},
+    {GameState::PLAY, Stage::UPDATE, follow_player},
+    {GameState::PLAY, Stage::UPDATE, draw_things},
+    {GameState::RESTART, Stage::UPDATE, draw_things},
+    {GameState::PLAY, Stage::UPDATE, cull_lines},
+    {GameState::PLAY, Stage::UPDATE, explode},
+    {GameState::PLAY, Stage::UPDATE, draw_lines},
+    {GameState::RESTART, Stage::UPDATE, ready_set_go},
+    {GameState::PLAY, Stage::UPDATE, await_restart},
+};
