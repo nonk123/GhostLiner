@@ -2,13 +2,14 @@
 #include <cmath>
 #include <memory>
 
-#include "camera.hpp"
-#include "raymath.h"
-#include "systems.hpp"
-#include "thing.hpp"
-
 #include "muli/muli.h"
 #include "raylib.h"
+#include "raymath.h"
+
+#include "assets.hpp"
+#include "camera.hpp"
+#include "systems.hpp"
+#include "thing.hpp"
 
 const double DEATH_RESTART_TIMER = 3.0;
 
@@ -156,11 +157,15 @@ void explode(
             auto contact = phys_world->GetContacts();
 
             while (contact != nullptr) {
-                if ((contact->GetIncidentBody() == line_body &&
+                const auto these_bodies =
+                    (contact->GetIncidentBody() == line_body &&
                      contact->GetReferenceBody() == exp_body) ||
                     (contact->GetIncidentBody() == exp_body &&
-                     contact->GetReferenceBody() == line_body)) {
+                     contact->GetReferenceBody() == line_body);
+
+                if (contact->IsTouching() && these_bodies) {
                     cmd.del(explosive);
+                    PlaySound(pick_explode);
                 }
 
                 contact = contact->GetNext();

@@ -1,4 +1,5 @@
 #include "SECS.hpp"
+#include "assets.hpp"
 #include "muli/muli.h"
 #include "raylib.h"
 
@@ -17,6 +18,8 @@ int main(int, char**) {
     InitAudioDevice();
 
     SetTargetFPS(FPS);
+
+    load_assets();
 
     auto stop = false;
 
