@@ -1,0 +1,51 @@
+name: Upload to https://ghost-liner.nonk.dev
+
+on:
+  push:
+    branches: [deploy]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build the HTML5 version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install python3 cmake emscripten nodejs htmlmin ninja-build
+      - name: Build
+        run: |
+          mkdir -p build
+          cd build
+          emcmake cmake -DMULI_BUILD_DEMO=OFF -DSECS_BUILD_TEST=OFF -DPLATFORM=Web -DCMAKE_BUILD_TYPE=Release -B . -S ${{github.workspace}} -G Ninja
+          cmake --build . -j 4
+          cd ..
+      - name: Move the files
+        run: |
+          mkdir _site
+          cd build
+          mv index.html GhostLiner.data GhostLiner.wasm GhostLiner.js ../_site/
+          cd ..
+      - name: Upload artifacts
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: _site
+  deploy:
+    name: Deploy HTML5 to GitHub Pages
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
