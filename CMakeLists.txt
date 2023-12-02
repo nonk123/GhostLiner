@@ -18,7 +18,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   secs
   GIT_REPOSITORY "https://github.com/Schwungus-Software/SECS.git"
-  GIT_TAG 0.1.0)
+  GIT_TAG 0.1.1)
 
 FetchContent_MakeAvailable(raylib muli SECS)
 
@@ -33,7 +33,7 @@ if(EMSCRIPTEN)
   )
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WEB_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WEB_FLAGS}")
-  set(CMAKE_EXECUTABLE_SUFFIX ".html")
+  set(CMAKE_EXECUTABLE_SUFFIX ".js")
   file(COPY "${CMAKE_SOURCE_DIR}/index.html" DESTINATION "${CMAKE_BINARY_DIR}")
 endif()
 
