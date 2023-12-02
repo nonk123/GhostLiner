@@ -3,9 +3,6 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(GhostLiner)
 set(PROJECT_TARGET ${PROJECT_NAME})
 
-set(MULI_BUILD_DEMO OFF)
-set(SECS_BUILD_TEST OFF)
-
 include(FetchContent)
 
 FetchContent_Declare(
@@ -21,7 +18,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   secs
   GIT_REPOSITORY "https://github.com/Schwungus-Software/SECS.git"
-  GIT_TAG barely-usable)
+  GIT_TAG 0.1.0)
 
 FetchContent_MakeAvailable(raylib muli SECS)
 
@@ -32,13 +29,12 @@ file(COPY "${CMAKE_SOURCE_DIR}/assets" DESTINATION "${CMAKE_BINARY_DIR}")
 
 if(EMSCRIPTEN)
   set(WEB_FLAGS
-      "--preload-file ${CMAKE_SOURCE_DIR}/assets@assets/ -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY"
+      "--preload-file assets/ -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY"
   )
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WEB_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WEB_FLAGS}")
   set(CMAKE_EXECUTABLE_SUFFIX ".html")
-  file(COPY "${CMAKE_SOURCE_DIR}/HTML5Runner.html"
-       DESTINATION "${CMAKE_BINARY_DIR}/index.html")
+  file(COPY "${CMAKE_SOURCE_DIR}/index.html" DESTINATION "${CMAKE_BINARY_DIR}")
 endif()
 
 set(SOURCES "src/main.cpp" "src/systems.cpp" "src/thing.cpp" "src/camera.cpp"
